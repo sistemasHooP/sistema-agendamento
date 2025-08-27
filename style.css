@@ -1,0 +1,271 @@
+/* =================================================================
+   ARQUIVO: style.css
+   DESCRIÇÃO: Folha de estilos principal para o frontend.
+   ================================================================= */
+
+/* --- Configurações Globais e de Fontes --- */
+body { 
+    font-family: 'Inter', sans-serif; 
+    -webkit-font-smoothing: antialiased; 
+    -moz-osx-font-smoothing: grayscale; 
+}
+
+/* --- Animações --- */
+@keyframes spin { 
+    to { 
+        transform: rotate(360deg); 
+    } 
+}
+.animate-spin-slow { 
+    animation: spin 1.5s linear infinite; 
+}
+
+@keyframes slideInRight { 
+    from { 
+        transform: translateX(100%); 
+        opacity: 0; 
+    } 
+    to { 
+        transform: translateX(0); 
+        opacity: 1; 
+    } 
+}
+.notification-animation { 
+    animation: slideInRight 0.5s forwards ease-out; 
+}
+
+/* --- Classes de Utilidade --- */
+.hidden { 
+    display: none; 
+}
+
+/* --- Barra Lateral (Sidebar) --- */
+#sidebar { 
+    transition: transform 0.3s ease-in-out; 
+}
+@media (max-width: 767px) {
+    #sidebar.open { 
+        transform: translateX(0); 
+    }
+}
+
+/* --- Componente: Toggle Switch (Botão de Ligar/Desligar) --- */
+.toggle-switch { 
+    position: relative; 
+    display: inline-block; 
+    width: 50px; 
+    height: 28px; 
+}
+.toggle-switch input { 
+    opacity: 0; 
+    width: 0; 
+    height: 0; 
+}
+.toggle-slider { 
+    position: absolute; 
+    cursor: pointer; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    background-color: #ccc; 
+    transition: .4s; 
+    border-radius: 28px; 
+}
+.toggle-slider:before { 
+    position: absolute; 
+    content: ""; 
+    height: 20px; 
+    width: 20px; 
+    left: 4px; 
+    bottom: 4px; 
+    background-color: white; 
+    transition: .4s; 
+    border-radius: 50%; 
+}
+input:checked + .toggle-slider { 
+    background-color: #2563eb; 
+}
+input:checked + .toggle-slider:before { 
+    transform: translateX(22px); 
+}
+
+/* --- Ícone de Prioridade --- */
+.priority-icon.is-priority { 
+    color: #facc15; 
+}
+.priority-icon:not(.is-priority) { 
+    color: #cbd5e1; 
+}
+
+/* --- Barra de Rolagem Customizada --- */
+::-webkit-scrollbar { 
+    width: 8px; 
+    height: 8px; 
+}
+::-webkit-scrollbar-track { 
+    background: #f1f5f9; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #cbd5e1; 
+    border-radius: 10px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: #94a3b8; 
+}
+
+/* =================================================================
+   COMPONENTES (Classes do Tailwind convertidas)
+   ================================================================= */
+
+/* --- Links de Navegação --- */
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem; /* 12px 16px */
+    color: #475569; /* slate-600 */
+    font-weight: 500;
+    border-radius: 0.5rem; /* 8px */
+    transition: all 0.2s;
+}
+.nav-link:hover {
+    background-color: #f1f5f9; /* slate-100 */
+    color: #2563eb; /* blue-600 */
+}
+.active-link {
+    background-color: #2563eb; /* blue-600 */
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+.active-link:hover {
+    background-color: #1d4ed8; /* blue-700 */
+}
+
+/* --- Botões --- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.25rem; /* 10px 20px */
+    font-weight: 600;
+    border-radius: 0.5rem; /* 8px */
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+.btn:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary { 
+    background-color: #2563eb; color: white; 
+}
+.btn-primary:hover { 
+    background-color: #1d4ed8; 
+}
+.btn-primary:focus {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #2563eb;
+}
+
+.btn-secondary { 
+    background-color: #e2e8f0; color: #334155; 
+}
+.btn-secondary:hover { 
+    background-color: #cbd5e1; 
+}
+.btn-secondary:focus {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #94a3b8;
+}
+
+.btn-success { 
+    background-color: #059669; color: white; 
+}
+.btn-success:hover { 
+    background-color: #047857; 
+}
+.btn-success:focus {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #059669;
+}
+
+
+.btn-danger { 
+    background-color: #dc2626; color: white; 
+}
+.btn-danger:hover { 
+    background-color: #b91c1c; 
+}
+.btn-danger:focus {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #dc2626;
+}
+
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem; /* 36px */
+    height: 2.25rem; /* 36px */
+    border-radius: 0.375rem; /* 6px */
+    color: #64748b;
+    transition: all 0.2s;
+}
+.btn-icon:hover {
+    background-color: #e2e8f0;
+    color: #1e293b;
+}
+
+/* --- Formulários --- */
+.form-label {
+    display: block;
+    font-size: 0.875rem; /* 14px */
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 0.25rem; /* 4px */
+}
+.form-input, .form-select {
+    display: block;
+    width: 100%;
+    background-color: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem; /* 8px */
+    padding: 0.625rem 1rem; /* 10px 16px */
+    color: #1e293b;
+    transition: all 0.2s;
+}
+.form-input::placeholder {
+    color: #94a3b8;
+}
+.form-input:focus, .form-select:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px #2563eb;
+}
+
+/* --- Status Badges --- */
+.status-Confirmado, .status-Ativo { 
+    display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #166534; background-color: #dcfce7; border-radius: 9999px;
+}
+.status-Pendente { 
+    display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #854d0e; background-color: #fefce8; border-radius: 9999px;
+}
+.status-Cancelado { 
+    display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #991b1b; background-color: #fee2e2; border-radius: 9999px;
+}
+.status-Chamado { 
+    display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #3730a3; background-color: #e0e7ff; border-radius: 9999px;
+}
+.status-Concluído { 
+    display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #065f46; background-color: #d1fae5; border-radius: 9999px;
+}
+.status-Inativo { 
+    display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #374151; background-color: #e5e7eb; border-radius: 9999px;
+}
+.status-default { 
+    display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #1f2937; background-color: #f3f4f6; border-radius: 9999px;
+}
