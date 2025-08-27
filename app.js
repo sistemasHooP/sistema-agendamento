@@ -879,4 +879,5 @@ const App = {
 };
 
 // Inicializa a aplicação quando o DOM estiver pronto.
+
 document.addEventListener('DOMContentLoaded', () => App.init());
