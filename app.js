@@ -1,7 +1,5 @@
 // =================================================================
-// ARQUIVO: app.js (Versão Completa e Final)
-// DESCRIÇÃO: Lógica principal do frontend. Controla o estado,
-// a renderização das telas e a comunicação com a API.
+// ARQUIVO: app.js (Versão Final Completa - Sem API Key)
 // =================================================================
 
 const App = {
@@ -20,23 +18,21 @@ const App = {
     // ---- ELEMENTOS DO DOM (CACHE) ----
     elements: {},
 
-    // ---- [IMPORTANTE] NOVA LÓGICA DE API ----
+    // ---- LÓGICA DE API (MODELO SOLICITADO) ----
     api: {
         apiUrl: "https://script.google.com/macros/s/AKfycbyn1jRZtt3Ytyn9CQN-oNrixr5zpBFKU3gKn_whuBPXE_T6uLv-wGGxpBJJMgVyIWzpOw/exec",
-        
-        // ATENÇÃO: Substitua pela sua NOVA chave de API gerada.
-        apiKey: "8Z~hz_}]wJSd&Pk'EIympwmv",
 
-        async run(action, payload = {}) {
+        async run(action, params = {}) {
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
                 redirect: "follow",
                 mode: 'cors',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8',
+                },
                 body: JSON.stringify({
-                    apiKey: this.apiKey,
                     action: action,
-                    payload: payload
+                    params: params
                 })
             });
 
@@ -46,11 +42,11 @@ const App = {
 
             const result = await response.json();
 
-            if (!result.success) {
-                throw new Error(result.error || "Ocorreu um erro desconhecido na API.");
+            if (result.error) {
+                throw new Error(result.error);
             }
 
-            return result.data;
+            return result;
         }
     },
 
@@ -73,6 +69,7 @@ const App = {
         this.elements.loginForm.addEventListener('submit', this.handleLogin.bind(this));
 
         try {
+            this.showLoader('Conectando ao servidor...');
             const config = await this.api.run('getLoginScreenConfig');
             this.elements.loginTitle.textContent = config.businessName;
             if (config.logoUrl) {
@@ -80,8 +77,10 @@ const App = {
                 this.elements.loginLogo.classList.remove('hidden');
             }
         } catch (e) {
-            console.error("Não foi possível carregar a configuração da tela de login:", e);
-            this.elements.loginError.textContent = "Falha ao conectar com o servidor.";
+            console.error("Falha ao carregar configuração da tela de login:", e);
+            this.elements.loginError.textContent = e.message;
+        } finally {
+            this.hideLoader();
         }
     },
 
@@ -106,6 +105,9 @@ const App = {
         
         try {
             const response = await this.api.run('doLogin', { credentials });
+            if (!response.success) {
+                throw new Error(response.message || 'Credenciais inválidas.');
+            }
             this.elements.loaderText.textContent = 'Carregando dados...';
             this.state.currentUser = response.user;
             
@@ -119,7 +121,7 @@ const App = {
             this.launchApp();
         } catch (e) {
             this.hideLoader();
-            this.elements.loginError.textContent = e.message || 'Erro de comunicação. Tente novamente.';
+            this.elements.loginError.textContent = e.message;
             console.error(e);
         }
     },
@@ -305,7 +307,6 @@ const App = {
 
     // ---- FUNÇÕES DE RENDERIZAÇÃO (VIEWS) ----
     
-    // -- MASTER --
     renderMasterDashboard() {
         document.getElementById('view-title').textContent = 'Dashboard';
         const container = this.elements.mainContent;
@@ -418,8 +419,7 @@ const App = {
     async renderAppointmentEditForm(appointmentId, returnView) {
         this.showLoader('Carregando dados...');
         try {
-            const response = await this.api.run('getAppointmentDetails', { appointmentId });
-            const appt = response.appointment;
+            const appt = await this.api.run('getAppointmentDetails', { appointmentId });
             const profOptions = this.state.data.professionals.filter(p => p.Status === 'Ativo').map(p => `<option value="${p.ID_Profissional}" ${p.ID_Profissional === appt.ID_Profissional ? 'selected' : ''}>${p.Nome_Completo}</option>`).join('');
             const serviceOptions = this.state.data.services.map(s => `<option value="${s.Nome_Servico}" ${s.Nome_Servico === appt.Servico ? 'selected' : ''}>${s.Nome_Servico}</option>`).join('');
             const formHTML = `<form id="editAppointmentForm" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="form-label">Nome do Cliente</label><input type="text" id="editClientName" class="form-input" value="${appt.Nome_Cliente}" required></div><div><label class="form-label">Telefone</label><input type="tel" id="editClientPhone" class="form-input" value="${appt.Telefone_WhatsApp || ''}"></div><div><label class="form-label">Data</label><input type="date" id="editApptDate" class="form-input" value="${appt.Data}" required></div><div><label class="form-label">Hora</label><input type="time" id="editApptTime" class="form-input" value="${appt.Hora}" required></div><div class="md:col-span-2"><label class="form-label">Profissional</label><select id="editProfessional" class="form-select">${profOptions}</select></div><div class="md:col-span-2"><label class="form-label">Serviço</label><select id="editService" class="form-select">${serviceOptions}</select></div><div class="md:col-span-2"><label class="form-label">Observações</label><textarea id="editObs" rows="2" class="form-input">${appt.Observacoes || ''}</textarea></div></div><div class="flex justify-end gap-4 pt-4 border-t border-slate-200 mt-4"><button type="button" class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">Salvar Alterações</button></div></form>`;
@@ -588,7 +588,6 @@ const App = {
         });
     },
     
-    // -- ATENDENTE --
     renderAttendantSchedule(profId = null) {
         const isModal = profId !== null;
         const title = 'Novo Agendamento';
@@ -647,6 +646,9 @@ const App = {
                         await this.refreshData('professional-agenda');
                     } else {
                         formContainer.querySelector('#newAppointmentForm').reset();
+                        clientDetailsForm.classList.add('hidden');
+                        dateInput.value = '';
+                        profSelect.value = '';
                         this.refreshData(null, true);
                         this.openModal('Ficha Gerada', ticketHtml, 'max-w-md');
                     }
@@ -662,7 +664,7 @@ const App = {
         const today = new Date();
         const todayStr = new Date(today.setMinutes(today.getMinutes() - today.getTimezoneOffset())).toISOString().split('T')[0];
         const todaysAppointments = this.state.data.appointments.filter(a => a.Data === todayStr).sort((a, b) => parseInt(a.Numero_Ficha, 10) - parseInt(b.Numero_Ficha, 10));
-        const agendaItems = todaysAppointments.length > 0 ? todaysAppointments.map(appt => { const prof = this.state.data.professionals.find(p => p.ID_Profissional === appt.ID_Profissional); const canEditOrDelete = appt.Status === 'Confirmado' || appt.Status === 'Pendente'; const isPriority = appt.Prioridade === 'SIM'; return `<div class="p-3 border-l-4 border-${{Confirmado:'green',Pendente:'yellow',Concluído:'blue',Cancelado:'red',Chamado:'purple'}[appt.Status] || 'slate'}-400 rounded-lg flex items-center justify-between gap-4 bg-white shadow-sm"><div class="flex items-center gap-3 flex-grow"><div class="font-bold text-slate-800 text-lg bg-slate-100 px-3 py-1 rounded-md">Ficha ${String(appt.Numero_Ficha || '-').padStart(3, '0')}</div><div><div class="font-medium text-slate-700">${appt.Nome_Cliente}</div><div class="text-sm text-slate-500">com ${prof ? prof.Nome_Completo : 'N/A'}</div></div></div><div class="flex items-center gap-2"><span class="status-${appt.Status || 'default'}">${appt.Status}</span><button data-action="toggle-priority" data-id="${appt.ID_Agendamento}" class="btn-icon" title="Marcar como Prioridade"><i class="fa-solid fa-star priority-icon ${isPriority ? 'is-priority' : ''}"></i></button><button data-action="edit" data-id="${appt.ID_Agendamento}" class="btn btn-secondary !p-2" title="Editar" ${!canEditOrDelete ? 'disabled' : ''}><i class="fa-solid fa-pencil"></i></button><button data-action="delete" data-id="${appt.ID_Agendamento}" class="btn btn-danger !p-2" title="Excluir" ${!canEditOrDelete ? 'disabled' : ''}><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : `<div class="text-center p-8"><p class="text-slate-500">Nenhum agendamento para hoje.</p></div>`;
+        const agendaItems = todaysAppointments.length > 0 ? todaysAppointments.map(appt => { const prof = this.state.data.professionals.find(p => p.ID_Profissional === appt.ID_Profissional); const canEditOrDelete = appt.Status === 'Confirmado' || appt.Status === 'Pendente'; const isPriority = appt.Prioridade === 'SIM'; return `<div class="p-3 border-l-4 border-${{Confirmado:'green',Pendente:'yellow',Concluído:'blue',Cancelado:'red',Chamado:'purple'}[appt.Status] || 'slate'}-400 rounded-lg flex items-center justify-between gap-4 bg-white shadow-sm"><div class="flex items-center gap-3 flex-grow"><div class="font-bold text-slate-800 text-lg bg-slate-100 px-3 py-1 rounded-md">Ficha ${String(appt.Numero_Ficha || '-').padStart(3, '0')}</div><div><div class="font-medium text-slate-700">${appt.Nome_Cliente}</div><div class="text-sm text-slate-500">com ${prof ? prof.Nome_Completo : 'N/A'}</div></div></div><div class="flex items-center gap-2 flex-shrink-0"><span class="status-${appt.Status || 'default'}">${appt.Status}</span><button data-action="toggle-priority" data-id="${appt.ID_Agendamento}" class="btn-icon" title="Marcar como Prioridade"><i class="fa-solid fa-star priority-icon ${isPriority ? 'is-priority' : ''}"></i></button><button data-action="edit" data-id="${appt.ID_Agendamento}" class="btn btn-secondary !p-2" title="Editar" ${!canEditOrDelete ? 'disabled' : ''}><i class="fa-solid fa-pencil"></i></button><button data-action="delete" data-id="${appt.ID_Agendamento}" class="btn btn-danger !p-2" title="Excluir" ${!canEditOrDelete ? 'disabled' : ''}><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : `<div class="text-center p-8"><p class="text-slate-500">Nenhum agendamento para hoje.</p></div>`;
         container.innerHTML = `<div class="bg-white p-4 sm:p-6 rounded-xl shadow-md border border-slate-200"><div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold text-slate-800">Agenda de Hoje</h3><div class="text-slate-600 font-medium bg-slate-100 px-3 py-1 rounded-lg">${new Date().toLocaleDateString('pt-BR')}</div></div><div id="attendant-agenda-items" class="space-y-3">${agendaItems}</div></div>`;
         container.querySelector('#attendant-agenda-items').addEventListener('click', async e => {
             const button = e.target.closest('button[data-id]');
@@ -694,7 +696,6 @@ const App = {
         this.state.agendaRefreshInterval = setInterval(checkForUpdates, intervalMilliseconds);
     },
     
-    // -- PROFISSIONAL --
     renderProfessionalAgenda() {
         document.getElementById('view-title').textContent = 'Fila de Atendimento';
         const container = this.elements.mainContent;
@@ -879,5 +880,4 @@ const App = {
 };
 
 // Inicializa a aplicação quando o DOM estiver pronto.
-
 document.addEventListener('DOMContentLoaded', () => App.init());
