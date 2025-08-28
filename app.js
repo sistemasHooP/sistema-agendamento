@@ -19,37 +19,38 @@ const App = {
     elements: {},
 
     // ---- LÓGICA DE API (MODELO SOLICITADO) ----
-    api: {
-        apiUrl: "https://script.google.com/macros/s/AKfycbyn1jRZtt3Ytyn9CQN-oNrixr5zpBFKU3gKn_whuBPXE_T6uLv-wGGxpBJJMgVyIWzpOw/exec",
+    // ---- [VERSÃO FINAL E CORRIGIDA] LÓGICA DE API ----
+api: {
+    apiUrl: "https://script.google.com/macros/s/AKfycbyn1jRZtt3Ytyn9CQN-oNrixr5zpBFKU3gKn_whuBPXE_T6uLv-wGGxpBJJMgVyIWzpOw/exec",
 
-        async run(action, params = {}) {
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                redirect: "follow",
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'text/plain;charset=utf-8',
-                },
-                body: JSON.stringify({
-                    action: action,
-                    params: params
-                })
-            });
+    async run(action, params = {}) {
+        const response = await fetch(this.apiUrl, {
+            method: 'POST',
+            redirect: "follow",
+            // Removido o 'mode: cors' que pode causar problemas em alguns cenários
+            // Removido o cabeçalho 'Content-Type' daqui, pois o corpo já o define.
+            body: JSON.stringify({
+                action: action,
+                params: params
+            })
+        });
 
-            if (!response.ok) {
-                throw new Error(`Erro de comunicação com a API. Status: ${response.status}`);
-            }
-
-            const result = await response.json();
-
-            if (result.error) {
-                throw new Error(result.error);
-            }
-
-            return result;
+        if (!response.ok) {
+            // Se a resposta não foi bem-sucedida, tentamos ler o erro
+            const errorText = await response.text();
+            console.error("Resposta da API não OK:", errorText);
+            throw new Error(`Erro de comunicação com a API. Status: ${response.status}`);
         }
-    },
 
+        const result = await response.json();
+
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        return result;
+    }
+},
     // ---- FUNÇÕES DE INICIALIZAÇÃO E CONTROLE ----
 
     async init() {
@@ -881,3 +882,4 @@ const App = {
 
 // Inicializa a aplicação quando o DOM estiver pronto.
 document.addEventListener('DOMContentLoaded', () => App.init());
+
